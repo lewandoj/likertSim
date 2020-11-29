@@ -258,4 +258,3 @@ simulateLikertData <- function(numSims) {
 
 #Fetch dfs and effect sizes as "m"
 m <- simulateLikertData(500)
-

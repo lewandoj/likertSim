@@ -16,11 +16,10 @@
 library(ggplot2)
 library(ggalt)
 library(tidyr)
-
-
+source("createLikertData.R")
 
 #Estimate overall bias
-#conclusion: median: -36, mean: -38
+#conclusion: median: -17, mean: -99
 summary(m$effectSizes)
 hist(m$effectSizes, breaks = 200, xlim = c(min(m$effectSizes), max(m$effectSizes)))
 
