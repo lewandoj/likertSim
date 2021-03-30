@@ -1,4 +1,5 @@
 library(truncnorm)
+library(effsize)
 
 #Calls function "simulateLikertData"
 #Arg "numSims": integer. Number of times the simulation should be run. 
@@ -118,6 +119,7 @@ simulateLikertData <- function(numSims) {
     
     selectSamplingMethod <- function(uColName){
       tFreqSumisZero <- sum(df[each_bin, c("t1Freq", "t2Freq", "t3Freq", "t4Freq", "t5Freq")])
+      
       calculateProbForFilledRow <- function() { #TODO CHECK IF THIS NEEDS uColName as arg
         sample(x = c(1,2,3,4,5),
                replace = TRUE,
@@ -193,10 +195,6 @@ simulateLikertData <- function(numSims) {
       assignment2[[each_bin]] <- selectSamplingMethod("ut2Freq")
 
     }
-    ##for (each_bin in df[,"bins"]) {
-    ##  #assignment1[[each_bin]] <- if(df[each_bin, "ut1Freq"] == 0) NA else sample_row("ut1Freq")
-    ##  #assignment2[[each_bin]] <- if(df[each_bin, "ut2Freq"] == 0) NA else sample_row("ut2Freq")
-    ##} 
     
     df$ut1Assign <- assignment1
     df$ut2Assign <- assignment2
@@ -213,12 +211,33 @@ simulateLikertData <- function(numSims) {
     d <- do.call(rbind, l)
     
     #Effect size (% change): actual (ut1/ut2) vs. Predicted (ut1Predicted/ut2Predicted)
-    pctDiffUActual <- (mean(d$data[d$cond=="ut2"]) - mean(d$data[d$cond=="ut1"])) / mean(d$data[d$cond=="ut1"]) * 100
-    pctDiffUPred <- (mean(d$data[d$cond=="ut2Predicted"]) - mean(d$data[d$cond=="ut1Predicted"])) / mean(d$data[d$cond=="ut1Predicted"]) *100
+    #pctDiffUActual <- (mean(d$data[d$cond=="ut2"]) - mean(d$data[d$cond=="ut1"])) / mean(d$data[d$cond=="ut1"]) * 100
+    #pctDiffUPred <- (mean(d$data[d$cond=="ut2Predicted"]) - mean(d$data[d$cond=="ut1Predicted"])) / mean(d$data[d$cond=="ut1Predicted"]) *100
+    #pctDiffCompared <- (pctDiffUPred - pctDiffUActual) / pctDiffUActual * 100
     
-    pctDiffCompared <- (pctDiffUPred - pctDiffUActual) / pctDiffUActual * 100
     
-    return(pctDiffCompared)
+    #Get cohen's d and CIs for likert & underlying data to compare effect sizes
+    d$source <- ifelse(grepl("Predicted", d$cond), "Likert", "Underlying")
+    df.likert <- d[d$source=="Likert",]
+    df.underlying <- d[d$source=="Underlying",]
+    
+    cohenD.underlying <- cohen.d(d = df.underlying$data, f = df.underlying$cond)
+    cohenD.likert <- cohen.d(d = df.likert$data, f = df.likert$cond)
+    cohenD.difference <- cohenD.underlying$estimate - cohenD.likert$estimate
+    cohenD.difference.ci <- cohenD.underlying$conf.int - cohenD.likert$conf.int
+
+    combined <- cbind(cohenD.underlying$estimate, cohenD.underlying$conf.int[1], cohenD.underlying$conf.int[2], 
+                      cohenD.likert$estimate, cohenD.likert$conf.int[1], cohenD.likert$conf.int[2], 
+                      cohenD.difference, cohenD.difference.ci[1], cohenD.difference.ci[2])
+    colnames(combined) <- c("underlying.effect", "underlying.lower", "underlying.upper", 
+                            "likert.effect", "likert.lower", "likert.upper", 
+                            "diff.effect", "diff.lower", "diff.upper")
+    rownames(combined) <- NULL
+    combined <- as.data.frame(combined)
+    
+    
+    #return(pctDiffCompared)
+    return(combined)
   }
   
   #Logic
@@ -236,19 +255,25 @@ simulateLikertData <- function(numSims) {
   
   #Probably put this in the function above
   mainLoop <- function(numSims) {
-    effectSize <- c()
+    #effectSize <- c()
     dfFeed <- data.frame()
     
     for (each_sim in 1:numSims) {
       d <- runMain()
-      d$df$simNum <- each_sim
+      d$df$simNum <- each_sim #Create new variable to assign simulation index
       
-      effectSize[each_sim] <- d$effectSize
+      #Create effectSize object
+      effectSize <- if(each_sim == 1) {
+        d$effectSize 
+      } else {
+        rbind(effectSize, d$effectSize)
+      } 
+      
+      #effectSize[each_sim] <- d$effectSize
       dfFeed <- rbind(dfFeed, d$df)
-      #dfList[[each_sim]] <- d$df 
     }
+    
     combine <- list(df = dfFeed, effectSizes = effectSize)
-    #combine <- list(df = dfList, effectSizes = effectSize)
     return(combine)
     
   }
