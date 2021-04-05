@@ -62,59 +62,50 @@ testUvsLikert <- function(data = m$df, sim.num) {
   
   ut1 <- data.frame(data = rep(df$bins, df$ut1Freq), cond = "ut1")
   ut2 <- data.frame(data = rep(df$bins, df$ut2Freq), cond = "ut2")
-  ut1Predicted <- data.frame(data = na.omit(unlist(df$ut1Assign)), cond = "ut1Predicted")
-  ut2Predicted <- data.frame(data = na.omit(unlist(df$ut2Assign)), cond = "ut2Predicted")
-  l <- list(ut1, ut2, ut1Predicted, ut2Predicted)
+  ut1Likert <- data.frame(data = na.omit(unlist(df$ut1Assign)), cond = "ut1Likert")
+  ut2Likert <- data.frame(data = na.omit(unlist(df$ut2Assign)), cond = "ut2Likert")
+  l <- list(ut1, ut2, ut1Likert, ut2Likert)
   d <- do.call(rbind, l)
   
-  #Effect size (% change): actual (ut1/ut2) vs. Predicted (ut1Predicted/ut2Predicted)
-  d$source <- ifelse(grepl("Predicted", d$cond), "Likert", "Underlying")
+  #Prep data for comparisons
+  d$source <- ifelse(grepl("Likert", d$cond), "Likert", "Underlying")
   df.likert <- d[d$source=="Likert",]
   df.underlying <- d[d$source=="Underlying",]
   
-  cohenD.underlying <- cohen.d(df.underlying[ ,1:2], group =  "cond")
-  cohenD.likert <- cohen.d(df.likert[ ,1:2], group =  "cond")
-  cohenD.difference <- cohenD.underlying$cohen.d - cohenD.likert$cohen.d
-  combined <- rbind(cohenD.underlying$cohen.d, cohenD.likert$cohen.d, cohenD.difference)
-  rownames(combined) <- c("underlying", "likert", "difference")
+  #Add comparison statistics
+  meansPerGroup <- aggregate(d$data, list(d$cond), mean)
   
-  #This method above does work with cbind but you need to label the cols so it's clear their source
-  #pctDiffUActual <- (mean(d$data[d$cond=="ut2"]) - mean(d$data[d$cond=="ut1"])) / mean(d$data[d$cond=="ut1"]) * 100
-  #pctDiffUPred <- (mean(d$data[d$cond=="ut2Predicted"]) - mean(d$data[d$cond=="ut1Predicted"])) / mean(d$data[d$cond=="ut1Predicted"]) *100
-  #pctDiffCompared <- (pctDiffUPred - pctDiffUActual) / pctDiffUActual * 100
+  pctDiffUnderlying <- (mean(d$data[d$cond=="ut2"]) - mean(d$data[d$cond=="ut1"])) / mean(d$data[d$cond=="ut1"]) * 100
+  pctDiffLikert <- (mean(d$data[d$cond=="ut2Likert"]) - mean(d$data[d$cond=="ut1Likert"])) / mean(d$data[d$cond=="ut1Likert"]) *100
+  pctDiffCompared <- (pctDiffLikert - pctDiffUnderlying) / pctDiffUnderlying * 100
   
-  output <- list(dataframe = d, cohenD.results = combined)
+  cohenD.underlying <- cohen.d(d = df.underlying$data, f = df.underlying$cond)
+  cohenD.likert <- cohen.d(d = df.likert$data, f = df.likert$cond)
+  cohenD.difference <- cohenD.underlying$estimate - cohenD.likert$estimate
+  cohenD.difference.ci <- cohenD.underlying$conf.int - cohenD.likert$conf.int
+  
+  #Combine data
+  combined <- data.frame(ut1.mean = meansPerGroup[1,2],
+                         ut2.mean = meansPerGroup[3,2],
+                         ut1Likert.mean = meansPerGroup[2,2],
+                         ut2Likert.mean = meansPerGroup[4,2],
+                         underlying.pctdiff = pctDiffUnderlying,
+                         likert.pctdiff = pctDiffLikert,
+                         diff.pctdiff = pctDiffCompared,
+                         underlying.cohenD.effect = cohenD.underlying$estimate,
+                         underlying.cohenD.lower = cohenD.underlying$conf.int[1],
+                         underlying.cohenD.upper = cohenD.underlying$conf.int[2],
+                         likert.cohenD.effect = cohenD.likert$estimate,
+                         likert.cohenD.lower = cohenD.likert$conf.int[1],
+                         likert.cohenD.upper = cohenD.likert$conf.int[2],
+                         diff.cohenD.effect = cohenD.difference,
+                         diff.cohenD.lower = cohenD.difference.ci[1],
+                         diff.cohenD.upper = cohenD.difference.ci[2]
+  )
+  rownames(combined) <- NULL
+  output <- list(dataframe = d, effectSizes = combined)
   
   return(output)
 }
 
-#Use this to plot effect size diff and the means of ut1-2
-#So we can see where on the T scales the effect appears
-get.df.EffectsizeAndUnderlyingMeanPerSim <- function() {
-  d <- m$df[,c(1:3, 21)] #isolate relevant data cols m
-  es <- m$effectSizes$diff.effect
-  
-  convertBinsToVector <- function() {
-    ut1Vecorized <- rep(x = d$bins, times = d$ut1Freq)
-    ut1SimNumVectorized <- rep(x = d$simNum, times = d$ut1Freq)
-    d1 <- cbind(ut1Vecorized, ut1SimNumVectorized, "ut1")
-    
-    ut2Vecorized <- rep(x = d$bins, times = d$ut2Freq)
-    ut2SimNumVectorized <- rep(x = d$simNum, times = d$ut2Freq)
-    d2 <- cbind(ut2Vecorized, ut2SimNumVectorized, "ut2")
-    
-    dlong <- rbind(d1, d2)
-    dlong <- as.data.frame(dlong)
-    names(dlong) <- c("data", "simNum", "timePeriod")
-    dlong$data <- as.numeric(dlong$data)
-    dlong$simNum <- as.numeric(dlong$simNum)
-    dlong$timePeriod <- as.factor(dlong$timePeriod)
-    
-    
-    return(dlong)
-  }
-  
-  j <- merge(convertBinsToVector(), es, by = "simNum")
-  aggregate(.~simNum+timePeriod, j, mean)
-}
 

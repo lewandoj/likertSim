@@ -2,7 +2,7 @@ source("helpers.R")
 library(ggplot2)
 library(ggpubr)
 library(ggalt)
-library(hrbrthemes)
+#library(hrbrthemes)
 library(viridis)
 
 #Plot T distribtions for 5 likert labels
@@ -23,13 +23,14 @@ plot.tfreq <- function() {
 
 #Plot u distributions for 1 simulation. To be used as an exmaple. 
 plot.ufreq <- function() {
-        sim <- 2 #2 is used because ut1Freq and ut2Freq have a large difference and helps illustrate
+        sim <- 50
         df <- freq2Case(sim.num = sim, freq.col = c("ut1Freq", "ut2Freq"))
         
         p <- ggplot(df, aes(x=data, fill=source)) +
                 geom_histogram(binwidth = 1, alpha = 0.6, position = "identity", size = .5, color = "black") +
                 theme_classic() +
-                labs(fill="")
+                labs(fill="") + 
+                xlim(c(0, 100))
         return(p)
 }
 
@@ -67,17 +68,18 @@ plot.tprobassign <- function() {
         df$bins <- rep(1:100, 5)
         
         p <- ggplot(df, aes(x = bins, y = data, fill = source)) +
-                geom_bar(stat = "identity", size = .5, color = "black") +
+                geom_bar(stat = "identity", size = .3, color = "black") +
                 scale_x_continuous(expand = c(0, 0)) +
                 scale_y_continuous( expand = c(0, 0)) +
                 theme_classic() +
-                labs(fill="")
+                labs(fill="") + 
+                theme(legend.position = "bottom")
         return(p)
 }
 
 #Plot 1 example of a ut1/ut2 distribution along with the likert distributions
 #Also plot the means of those distributions so you can examine 1 effect size
-plot.ul <- function(simNum = 1) {
+plot.ul <- function(simNum = 50) {
         df <- testUvsLikert(sim.num = simNum)$dataframe
         es <- testUvsLikert(sim.num = simNum)$effectSizes
         df$source <- ifelse(grepl("Likert", df$cond), "Likert", "Underlying")
@@ -90,18 +92,16 @@ plot.ul <- function(simNum = 1) {
                 scale_fill_viridis(discrete=TRUE) +
                 scale_color_viridis(discrete=TRUE) +
                 labs(fill="")
-        
         #Plot the likert effect size and an hline of the underlying effect size
-        plot.means <- ggplot(es, aes(x = "Single Likert Conversion", 
-                                     y = likert.cohenD.effect)) + 
-                geom_errorbar(width=.1, aes(ymin = likert.cohenD.lower, 
-                                            ymax = likert.cohenD.upper)) +
-                geom_point(shape=21, size=2, fill="white") +
+        plot.means <- ggplot(es, aes(x = "Single Likert Conversion", y = likert.pctdiff)) + 
+                geom_point(shape=1, size=4, fill="white") +
                 theme_bw() +
-                #ylim(-2, 2) + 
-                ylab("Cohen d") +
-                geom_hline(yintercept = es$underlying.cohenD.effect, color = "red")
-        
+                ylab("Percent Difference") +
+                geom_hline(yintercept = es$underlying.pctdiff, color = "red") + 
+                geom_text(aes(label = paste0("(", round(likert.pctdiff, 2), ")")), nudge_y = -0.05) + 
+                annotate("segment", x = 1, xend = 1, y = es$likert.pctdiff, yend = es$underlying.pctdiff, 
+                         size = 1, arrow = arrow(ends = "both"))
+
         p <- ggarrange(plot.hist, plot.means, ncol = 2, widths = c(4,1))
         
         
@@ -115,18 +115,30 @@ plot.ul.and.es <- function() {
         d <- m$effectSizes
         d$simNum <- 1:nrow(d)
 
-        p <- ggplot(d[d$simNum,], aes(x = ut1.mean, 
-                                      xend = ut2.mean, 
-                                      y = diff.pctdiff)) +
+        #p <- ggplot(d[d$simNum,], aes(x = ut1.mean, 
+        #                              xend = ut2.mean, 
+        #                              y = likert.pctdiff)) +
+        #        geom_dumbbell(size = .5) + 
+        #        geom_vline(xintercept = c(16, 33, 50, 66, 83)) +
+        #        geom_hline(yintercept = 10, color = "red", size = 2) +
+        #        theme_classic() + 
+        #        scale_x_continuous(expand=c(0,0)) +
+        #        scale_y_continuous(expand=c(0,0)) +
+        #        xlim(c(0, 100)) + ylim(c(-20, 20))
+        
+        p <- ggplot(d, aes(x = ut1.mean, 
+                      xend = ut2.mean, 
+                      y = likert.pctdiff), ) +
+                geom_line(aes(x = ut1.mean, y = underlying.pctdiff), 
+                          stat = "identity", color = "red", size = 1.5) +
                 geom_dumbbell(size = .5) + 
                 geom_vline(xintercept = c(16, 33, 50, 66, 83)) +
-                geom_hline(yintercept = 10, color = "red", size = 2) +
                 theme_classic() + 
                 scale_x_continuous(expand=c(0,0)) +
                 scale_y_continuous(expand=c(0,0)) +
-                xlim(c(0, 100)) + ylim(c(-100, 100))
+                xlim(c(0, 100)) + ylim(c(-20, 20))
         
-        bothplots <- ggarrange(p, plot.tfreq(), nrow = 2, align = "v")
+        bothplots <- ggarrange(p, plot.tfreq(), nrow = 2, align = "v", heights = c(3,1))
 
         return(bothplots)
 }
