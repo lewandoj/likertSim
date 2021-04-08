@@ -14,9 +14,8 @@ plot.tfreq <- function() {
                 geom_histogram(binwidth = 1, alpha=0.6, position = "identity", size = .5, color = "black") +
                 theme_classic() + 
                 labs(fill="") + 
-                scale_x_continuous(expand=c(0,0)) +
+                scale_x_continuous(expand=c(.01,.01), limits = c(0, 100)) +
                 scale_y_continuous(expand=c(0,0)) + 
-                xlim(c(0, 100)) + 
                 theme(legend.position = "bottom")
         return(p)
 }
@@ -114,17 +113,6 @@ plot.ul <- function(simNum = 50) {
 plot.ul.and.es <- function() {
         d <- m$effectSizes
         d$simNum <- 1:nrow(d)
-
-        #p <- ggplot(d[d$simNum,], aes(x = ut1.mean, 
-        #                              xend = ut2.mean, 
-        #                              y = likert.pctdiff)) +
-        #        geom_dumbbell(size = .5) + 
-        #        geom_vline(xintercept = c(16, 33, 50, 66, 83)) +
-        #        geom_hline(yintercept = 10, color = "red", size = 2) +
-        #        theme_classic() + 
-        #        scale_x_continuous(expand=c(0,0)) +
-        #        scale_y_continuous(expand=c(0,0)) +
-        #        xlim(c(0, 100)) + ylim(c(-20, 20))
         
         p <- ggplot(d, aes(x = ut1.mean, 
                       xend = ut2.mean, 
@@ -134,9 +122,9 @@ plot.ul.and.es <- function() {
                 geom_dumbbell(size = .5) + 
                 geom_vline(xintercept = c(16, 33, 50, 66, 83)) +
                 theme_classic() + 
-                scale_x_continuous(expand=c(0,0)) +
-                scale_y_continuous(expand=c(0,0)) +
-                xlim(c(0, 100)) + ylim(c(-20, 20))
+                scale_x_continuous(expand=c(.01,.01), limits = c(0, 100)) +
+                scale_y_continuous(expand=c(0,0)) #+
+                #xlim(c(0, 100)) #+ ylim(c(-20, 20))
         
         bothplots <- ggarrange(p, plot.tfreq(), nrow = 2, align = "v", heights = c(3,1))
 

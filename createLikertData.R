@@ -27,6 +27,12 @@ simulateLikertData <- function(numSims) {
                             b = scale_max, 
                             mean = scale_mean, 
                             sd = scale_sd), 0)
+    #this section is a test
+    #ut2 <- ut1 + (ut1 * .10)
+    #ut2.pos.exceeds.100 <- which(ut2 > 100)
+    #ut2[ut2.pos.exceeds.100] <- 100
+    #end testing section
+    
     ut2 <- round(rtruncnorm(n = sample_size, 
                             a = scale_min, 
                             b = scale_max, 
@@ -162,15 +168,26 @@ simulateLikertData <- function(numSims) {
         
         distanceVectorProb <- function() {
           disV <- distanceVector()
-          denom <- sum((1 - disV[1]), (1 - disV[2]), (1 - disV[3]), (1 - disV[4]), (1 - disV[5]))
-          ProbAssign <- c()
-          ProbAssign[1] <- (1 - disV[1]) / denom
-          ProbAssign[2] <- (1 - disV[2]) / denom
-          ProbAssign[3] <- (1 - disV[3]) / denom
-          ProbAssign[4] <- (1 - disV[4]) / denom
-          ProbAssign[5] <- (1 - disV[5]) / denom
           
-          ProbAssign
+          #COMMENTED OUT FOR TESTING.
+          #denom <- sum((1 - disV[1]), (1 - disV[2]), (1 - disV[3]), (1 - disV[4]), (1 - disV[5]))
+          #ProbAssign <- c()
+          
+          #ProbAssign[1] <- (1 - disV[1]) / denom
+          #ProbAssign[2] <- (1 - disV[2]) / denom
+          #ProbAssign[3] <- (1 - disV[3]) / denom
+          #ProbAssign[4] <- (1 - disV[4]) / denom
+          #ProbAssign[5] <- (1 - disV[5]) / denom
+          
+          #ProbAssign
+          #END OF TESTING.
+          
+          denom <- sum(disV) #total distance
+          disV <- 1/disV #convert distances into inverse distance
+          disV <- disV/sum(disV) #convert inverse distances into probabilities
+          
+          return(disV)
+          
         }
         sampleRow <- function() {
           sample(x = c(1,2,3,4,5),
@@ -292,4 +309,4 @@ simulateLikertData <- function(numSims) {
 }
 
 #Fetch dfs and effect sizes as "m"
-m <- simulateLikertData(1000)
+m <- simulateLikertData(500)
