@@ -23,11 +23,12 @@ source("createLikertData.R")
 summary(m$effectSizes)
 hist(m$effectSizes, breaks = 200, xlim = c(min(m$effectSizes), max(m$effectSizes)))
 
+hist(m$effectSizes$diff.effect)
 
 
 MeansandEffectSizebySim <- function() {
   d <- m$df[,c(1:3, 21)] #isolate relevant data cols m
-  es <- data.frame(simNum = 1:length(m$effectSize), effectSize = m$effectSizes)
+  es <- data.frame(simNum = 1:nrow(m$effectSizes), effectSize = m$effectSizes)
   
   convertBinsToVector <- function() {
     ut1Vecorized <- rep(x = d$bins, times = d$ut1Freq)
