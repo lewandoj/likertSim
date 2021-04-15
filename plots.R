@@ -11,7 +11,8 @@ plot.tfreq <- function() {
         df <- freq2Case(sim.num = 1, freq.col = c("t1Freq", "t2Freq", "t3Freq", "t4Freq", "t5Freq"))
         
         p <- ggplot(df, aes(x=data, fill=source)) +
-                geom_histogram(binwidth = 1, alpha=0.6, position = "identity", size = .5, color = "black") +
+                geom_histogram(aes(y = ..density..), binwidth = 1, alpha=0.7, position = "identity", size = .5, color = "black") +
+                geom_density(alpha = .7) +
                 theme_classic() + 
                 labs(fill="") + 
                 scale_x_continuous(expand=c(.01,.01), limits = c(0, 100)) +

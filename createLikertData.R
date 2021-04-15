@@ -3,7 +3,7 @@ library(effsize)
 
 #Calls function "simulateLikertData"
 #Arg "numSims": integer. Number of times the simulation should be run. 
-#Output: list with 2 objects: (1) dataframe of simulations (2) vector of effect sizes
+#Output: list with 2 objects: (1) dataframe of simulations (2) dataframe of effect sizes
 simulateLikertData <- function(numSims) {
   
   #Step 0. Make simple df with 1:100 bins
@@ -27,12 +27,7 @@ simulateLikertData <- function(numSims) {
                             b = scale_max, 
                             mean = scale_mean, 
                             sd = scale_sd), 0)
-    #this section is a test
-    #ut2 <- ut1 + (ut1 * .10)
-    #ut2.pos.exceeds.100 <- which(ut2 > 100)
-    #ut2[ut2.pos.exceeds.100] <- 100
-    #end testing section
-    
+
     ut2 <- round(rtruncnorm(n = sample_size, 
                             a = scale_min, 
                             b = scale_max, 
@@ -73,11 +68,7 @@ simulateLikertData <- function(numSims) {
                             b = scaleMax, 
                             mean = scale_num[each_scale] * DivideScaleIn7Parts, 
                             sd = scale_sd), 0)
-      #x <- generateNormalPopulation(sizeofPopulation = 1000, 
-      #                              scaleMin = 1, 
-      #                              scaleMax = 100, 
-      #                              scaleMean = scale_num[each_scale] * (100/6),
-      #                              scaleSD = scale_sd)
+
       data[[each_scale]] <- as.data.frame(table(x, dnn = "bins"), 
                                           responseName = paste0("t", each_scale, "Freq"))
     }
@@ -126,13 +117,13 @@ simulateLikertData <- function(numSims) {
     selectSamplingMethod <- function(uColName){
       tFreqSumisZero <- sum(df[each_bin, c("t1Freq", "t2Freq", "t3Freq", "t4Freq", "t5Freq")])
       
-      calculateProbForFilledRow <- function() { #TODO CHECK IF THIS NEEDS uColName as arg
+      calculateProbForFilledRow <- function() {
         sample(x = c(1,2,3,4,5),
                replace = TRUE,
                size = df[each_bin, uColName],
                prob = df[each_bin, c("t1ProbAssign", "t2ProbAssign", "t3ProbAssign", "t4ProbAssign", "t5ProbAssign")])
       }
-      calculateProbForEmptyRow <- function(startingBinIndex = each_bin) { #may need to add uColName as arg
+      calculateProbForEmptyRow <- function(startingBinIndex = each_bin) { 
         
         distanceToNonZeroBin <- function(tColName) {
           
@@ -192,8 +183,8 @@ simulateLikertData <- function(numSims) {
         sampleRow <- function() {
           sample(x = c(1,2,3,4,5),
                  replace = TRUE,
-                 size = df[each_bin, uColName], #"ut1Freq"
-                 prob = distanceVectorProb())#df[each_bin, distanceVectorProb()])
+                 size = df[each_bin, uColName], 
+                 prob = distanceVectorProb())
           
         }
         sampleRow()
